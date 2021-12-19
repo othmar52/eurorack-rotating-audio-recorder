@@ -1,12 +1,16 @@
 # eurorack-rotating-audio-recorder
-raspberry pi/python based automatic audio recorder
+raspberry pi based automatic audio recorder
 
 
 ## Currently this is only an idea for a new project
 
-The goal is to have a non-interactive utility that records all your happy little accidents while fiddling around with your eurorack to an USB stick.  
+The goal is to have a **non-interactive** utility that records all your happy little accidents while fiddling around with your eurorack to an USB stick.  
 
-You dont have to start or stop the recording manually - it's all automatically based on audio levels that are beeing sent into the module.  
+You dont have to start or stop the recording manually - it's all done automatically based on audio levels that are beeing sent into the module.  
+
+Similar to footage creating surveillance devices you can only access the most recent recordings. The oldest recordings gets deleted automatically to free space for new recordings on the USB stick.  
+
+There is no plan to implement any playback functionality. If you want to access the recording you have to unplug the USB stick and copy the files somewhere else.
 
 ## Frontplate
 
