@@ -105,15 +105,15 @@ class RgbLeds():
 
     def getColorAndBrightnessForVu(self, level):
 
-        maxInput = 20
+        maxInput = 180
         color = self.colorRed
         brightness = self.brightness
         if level < maxInput*0.8:
             color = self.colorYellow
 
-        if level < maxInput*0.5:
+        if level < maxInput*0.6:
             color = self.colorGreen
-            brightness = mapFunc(level, 0, maxInput*0.5, 0, self.brightness)
+            brightness = mapFunc(level, 0, maxInput*0.6, 0, self.brightness)
             if level < 0.5:
                 brightness = self.brightness
                 color = self.colorOff

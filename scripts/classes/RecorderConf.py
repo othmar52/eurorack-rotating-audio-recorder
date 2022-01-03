@@ -32,10 +32,16 @@ class ButtonProps():
         self.pin = None
         self.duration = None
 
+class FileCleanerProps():
+    def __init__(self):
+        self.logfilename = None
+        self.cronjobIntervalMinutes = None
+
 class RecorderConf():
     def __init__(self, action):
         self.rec = recProps()
         self.usbstick = usbstickProps()
+        self.filecleaner = FileCleanerProps()
         self.cnf = None
         self.action = action
         self.recMode = False
@@ -63,6 +69,9 @@ class RecorderConf():
 
         self.btnUnmount.pin = int(self.cnf.get('buttons', 'unmount.pin'))
         self.btnUnmount.duration = int(self.cnf.get('buttons', 'unmount.pushduration'))
+
+        self.filecleaner.logfilename = str(self.cnf.get('filecleaner', 'logfilename'))
+        self.filecleaner.cronjobIntervalMinutes = int(self.cnf.get('filecleaner', 'cronjobIntervalMinutes'))
 
     def getRecFileName(self, channelString):
         return f"{self.usbstick.mountpoint}/delme_rec_%s-%s.wav" % (time.strftime("%Y.%m.%d-%H.%M.%S"), channelString)

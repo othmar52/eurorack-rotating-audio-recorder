@@ -1,6 +1,5 @@
 #!/bin/env python3
-from scripts.PushButton import PushButton
-from scripts.classes.UnmountRequest import UnmountRequest
+
 import time
 import numpy  # Make sure NumPy is loaded before it is used in the callback
 import queue
@@ -8,8 +7,12 @@ import sounddevice as sd
 import soundfile as sf
 import sys
 
-from .Helpers import *
+from .Helpers import checkUsbPluggedIn
+from .Helpers import terminalVuMeter
+from .Helpers import appendToFileCleanerList
 from .RgbLeds import RgbLeds
+from .PushButton import PushButton
+from .classes.UnmountRequest import UnmountRequest
 
 class Recorder():
     def __init__(self, recConf):
@@ -33,6 +36,10 @@ class Recorder():
         )
 
     def getSoundFile(self, filename, channels):
+        appendToFileCleanerList(
+            f'{self.recConf.usbstick.mountpoint}/{self.recConf.filecleaner.logfilename}.tmp',
+            filename
+        )
         return sf.SoundFile(
             filename,
             mode='x',
@@ -56,9 +63,14 @@ class Recorder():
         with self.q.mutex:
             self.q.queue.clear()
 
-    def clearData(self, resource):
+    def clearData(self, resource, file1=None, file2=None):
         self.destroyInputStream(resource)
         self.clearAudioDataQue()
+        if file1 == None:
+            return
+        file1.close()
+        if file2 != None:
+            file2.close()
 
     def clearAudioDataQue(self):
         with self.q.mutex:
@@ -82,7 +94,7 @@ class Recorder():
             STEREO = 0
             DUAL_MONO = 1
             MONO = 2
-            RECMODE = MONO
+            RECMODE = STEREO
             lastCheckUnplugged = 0
             while True:
                 audioData = self.q.get()
@@ -93,13 +105,13 @@ class Recorder():
 
                 if time.time() - lastCheckUnplugged > self.recConf.usbstick.unplugCheckInterval:
                     if checkUsbPluggedIn(self.recConf.usbstick.name) == False:
-                        # unplugged usb stick
+                        print("usb stick not available")
                         sys.exit()
                     lastCheckUnplugged = time.time()
 
                 if RECMODE == STEREO or RECMODE == DUAL_MONO:
-                    avarageVolume = self.vuMeterDualChannel(audioData)
-                    if avarageVolume < self.recConf.rec.volumeTreshold:
+                    averageVolume = self.vuMeterDualChannel(audioData)
+                    if averageVolume < self.recConf.rec.volumeTreshold:
                         continue
                     self.clearData(inputStream)
                     if RECMODE == STEREO:
@@ -118,31 +130,25 @@ class Recorder():
                 self.clearAudioDataQue()
                 return self.recordMono()
 
-    def recordMono(self):
-        print("todo record mono")
-    def recordDualMono(self):
-        print("todo record dual mono")
-
-
     def vuMeterDualChannel(self, audioDataStereo):
         audioDataCH1 = audioDataStereo[:, 0]
         audioDataCH2 = audioDataStereo[:, 1]
-        avarageVolume = numpy.linalg.norm(audioDataStereo)*10
+        averageVolume = numpy.linalg.norm(audioDataStereo)*10
         self.leds.ledVuDualChannel(
             numpy.linalg.norm(audioDataCH1)*10,
             numpy.linalg.norm(audioDataCH2)*10
         )
-        terminalVuMeter(avarageVolume)
-        return avarageVolume
+        terminalVuMeter(averageVolume)
+        return averageVolume
 
 
     def vuMeterMonoChannel(self, audioDataCH1):
-        avarageVolume = numpy.linalg.norm(audioDataCH1)*10
+        averageVolume = numpy.linalg.norm(audioDataCH1)*10
         self.leds.ledVuSingleChannel(
             numpy.linalg.norm(audioDataCH1)*10
         )
-        terminalVuMeter(avarageVolume)
-        return avarageVolume
+        terminalVuMeter(averageVolume)
+        return averageVolume
 
     def recordStereo(self):
         # Make sure the file is opened before recording anything:
@@ -157,16 +163,14 @@ class Recorder():
                         audioDataStereo = self.q.get()
                         file.write(audioDataStereo)
                         self.leds.ledStatusRecordAudio(lastRecordingBegin)
-                        avarageVolume = self.vuMeterDualChannel(audioDataStereo)
+                        averageVolume = self.vuMeterDualChannel(audioDataStereo)
 
                         if self.unmountButton.checkFirePushEvent() == True:
-                            file.close()
-                            self.clearData(inputStream)
+                            self.clearData(inputStream, file)
                             raise UnmountRequest()
                         #if self.shouldStopRecording(volume_norm) == True or readButtonRecModePin() == True:
-                        if self.shouldStopRecording(avarageVolume) == True:
-                            file.close()
-                            self.clearData(inputStream)
+                        if self.shouldStopRecording(averageVolume) == True:
+                            self.clearData(inputStream, file)
                             return self.observeAudioInputWithoutRecording()
                         if self.shouldRotateRecording(lastRecordingBegin) == True:
                             file.close()
@@ -189,23 +193,19 @@ class Recorder():
                         while True:
                             audioDataStereo = self.q.get()
                             self.leds.ledStatusRecordAudio(lastRecordingBegin)
-                            avarageVolume = self.vuMeterDualChannel(audioDataStereo)
+                            averageVolume = self.vuMeterDualChannel(audioDataStereo)
 
                             audioDataCH1 = audioDataStereo[:, 0]
                             audioDataCH2 = audioDataStereo[:, 1]
                             fileCH1.write(audioDataCH1)
                             fileCH2.write(audioDataCH2)
-                            avarageVolume = self.vuMeterDualChannel(audioDataStereo)
+                            averageVolume = self.vuMeterDualChannel(audioDataStereo)
                             if self.unmountButton.checkFirePushEvent() == True:
-                                fileCH1.close()
-                                fileCH2.close()
-                                self.clearData(inputStream)
+                                self.clearData(inputStream, fileCH1, fileCH2)
                                 raise UnmountRequest()
-                            #if self.shouldStopRecording(avarageVolume) == True or readButtonRecModePin() == True:
-                            if self.shouldStopRecording(avarageVolume) == True:
-                                fileCH1.close()
-                                fileCH2.close()
-                                self.clearData(inputStream)
+                            #if self.shouldStopRecording(averageVolume) == True or readButtonRecModePin() == True:
+                            if self.shouldStopRecording(averageVolume) == True:
+                                self.clearData(inputStream, fileCH1, fileCH2)
                                 return self.observeAudioInputWithoutRecording()
                             if self.shouldRotateRecording(lastRecordingBegin) == True:
                                 fileCH1.close()
@@ -215,8 +215,6 @@ class Recorder():
         except RuntimeError:
             # unplugged usb stick
             raise
-
-
 
     def recordMono(self):
         # Make sure the file is opened before recording anything:
@@ -231,16 +229,14 @@ class Recorder():
                         audioData = self.q.get()
                         file.write(audioData)
                         self.leds.ledStatusRecordAudio(lastRecordingBegin)
-                        avarageVolume = self.vuMeterMonoChannel(audioData)
+                        averageVolume = self.vuMeterMonoChannel(audioData)
                         if self.unmountButton.checkFirePushEvent() == True:
-                            file.close()
-                            self.clearData(inputStream)
+                            self.clearData(inputStream, file)
                             raise UnmountRequest()
 
-                        #if self.shouldStopRecording(avarageVolume) == True or readButtonRecModePin() == True:
-                        if self.shouldStopRecording(avarageVolume) == True:
-                            file.close()
-                            self.clearData(inputStream)
+                        #if self.shouldStopRecording(averageVolume) == True or readButtonRecModePin() == True:
+                        if self.shouldStopRecording(averageVolume) == True:
+                            self.clearData(inputStream, file)
                             return self.observeAudioInputWithoutRecording()
                         if self.shouldRotateRecording(lastRecordingBegin) == True:
                             file.close()
