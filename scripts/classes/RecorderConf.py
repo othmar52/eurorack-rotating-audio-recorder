@@ -19,6 +19,7 @@ class recProps():
         self.volumeTreshold = None
         self.stopAfterSilence = None
         self.recMaxLength = None
+        self.terminalVuMeter = None
 
 class usbstickProps():
     def __init__(self):
@@ -72,6 +73,8 @@ class RecorderConf():
 
         self.filecleaner.logfilename = str(self.cnf.get('filecleaner', 'logfilename'))
         self.filecleaner.cronjobIntervalMinutes = int(self.cnf.get('filecleaner', 'cronjobIntervalMinutes'))
+
+        self.terminalVuMeter = int(self.cnf.get('general', 'terminalvumeter'))
 
     def getRecFileName(self, channelString):
         return f"{self.usbstick.mountpoint}/delme_rec_%s-%s.wav" % (time.strftime("%Y.%m.%d-%H.%M.%S"), channelString)

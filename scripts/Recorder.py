@@ -119,11 +119,12 @@ class Recorder():
                     return self.recordDualMono()
                 
                 audioDataLeftChannel = audioData[:, 0]
-                volume_norm = numpy.linalg.norm(audioDataLeftChannel)*10
-                self.leds.ledVuSingleChannel(volume_norm)
-                terminalVuMeter(volume_norm)
+                averageVolume = numpy.linalg.norm(audioDataLeftChannel)*10
+                self.leds.ledVuSingleChannel(averageVolume)
+                if self.recConf.terminalVuMeter == 1:
+                    terminalVuMeter(averageVolume)
 
-                if volume_norm < self.recConf.rec.volumeTreshold:
+                if averageVolume < self.recConf.rec.volumeTreshold:
                     continue
 
                 self.destroyInputStream(inputStream)
@@ -138,7 +139,8 @@ class Recorder():
             numpy.linalg.norm(audioDataCH1)*10,
             numpy.linalg.norm(audioDataCH2)*10
         )
-        terminalVuMeter(averageVolume)
+        if self.recConf.terminalVuMeter == 1:
+            terminalVuMeter(averageVolume)
         return averageVolume
 
 
@@ -147,7 +149,8 @@ class Recorder():
         self.leds.ledVuSingleChannel(
             numpy.linalg.norm(audioDataCH1)*10
         )
-        terminalVuMeter(averageVolume)
+        if self.recConf.terminalVuMeter == 1:
+            terminalVuMeter(averageVolume)
         return averageVolume
 
     def recordStereo(self):

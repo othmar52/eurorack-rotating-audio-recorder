@@ -18,7 +18,6 @@ class FileCleaner():
 
     ''' fake full USB stick for testing purposes'''
     def applyDevelopmentDeltaToFreeSpace(self, realFreeSpace):
-        # 53836992
         return realFreeSpace - 53840000
 
     def run(self):
@@ -28,7 +27,6 @@ class FileCleaner():
             sys.exit()
 
         self.appendFileListFromRecorderScript()
-
 
         if not os.path.exists(self.logfilename):
             print("ERROR: we do not have a logfile")
@@ -45,15 +43,12 @@ class FileCleaner():
 
 
     def recursiveDeleteOldestFile(self, requiredFreeSpace, fileList, lineIndex=0):
-        print("recursiveDeleteOldestFile")
         freeSpaceKB = checkUsbFreeSpace(self.recConf.usbstick.mountpoint)
-        # temp fake begin
-        freeSpaceKB = self.applyDevelopmentDeltaToFreeSpace(freeSpaceKB)
-        # temp fake end
+        #freeSpaceKB = self.applyDevelopmentDeltaToFreeSpace(freeSpaceKB)
 
         if freeSpaceKB > requiredFreeSpace:
-            print(f"there is enough headroom for {self.kbToStereoWavMinutes(freeSpaceKB)} minutes additional recording")
-            print(f"deleted {lineIndex} lines")
+            print(f"there is enough headroom for {self.kbToStereoWavMinutes(freeSpaceKB)} minutes additional stereo recording")
+            print(f"deleted {lineIndex} lines from logfile")
             removeLinesFromBeginningInTextFile(self.logfilename, lineIndex)
             sys.exit()
         if lineIndex-1 > len(fileList):
@@ -72,10 +67,6 @@ class FileCleaner():
 
         return self.recursiveDeleteOldestFile(requiredFreeSpace, fileList, lineIndex)
 
-
-    '''
-        
-    '''
     def calculateRequiredFreeSpace(self):
         fileSizeDuringCronjobIntervalKB = self.getStereoWavFileSizeKB(
             16,
