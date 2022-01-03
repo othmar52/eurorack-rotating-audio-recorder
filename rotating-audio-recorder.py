@@ -4,6 +4,7 @@ https://github.com/othmar52/eurorack-rotating-audio-recorder
 
 """
 import sys
+import signal
 from scripts.Config import getRecorderConf
 from scripts.UsbWatcher import UsbWatcher
 from scripts.Recorder import Recorder
@@ -13,7 +14,15 @@ from scripts.RgbLeds import RgbLeds
 def main():
     try:
         recConf = getRecorderConf()
-        print(recConf.action)
+
+        def turnOffTheLightsAndExit(*args):
+            leds = RgbLeds(recConf)
+            leds.allLedsOff()
+            sys.exit()
+
+        signal.signal(signal.SIGINT, turnOffTheLightsAndExit)
+        signal.signal(signal.SIGTERM, turnOffTheLightsAndExit)
+
         if recConf.action == 'usbwatcher':
             usbWatcher = UsbWatcher(recConf)
             usbWatcher.observeUsbMount()
@@ -26,9 +35,9 @@ def main():
 
     except KeyboardInterrupt:
         print('\nexit recorder')
-        leds = RgbLeds(recConf)
-        leds.allLedsOff()
-        sys.exit()
+        turnOffTheLightsAndExit()
+        
+
 
 if __name__ == "__main__":
     main()
