@@ -23,8 +23,8 @@ network={
        key_mgmt=WPA-PSK
 }' > wpa_supplicant.conf
 ```
-
-## unmount SD card and login via ssh
+preparation is finished. now you can unplug the SD card  
+## insert SD card into your PI and login via ssh
 
 ```bash
 ssh pi@raspberrypi
@@ -120,7 +120,7 @@ change permission of file
 ```
 sudo chmod 644 /lib/systemd/system/recorder.service
 ```
-configure systemd  
+configure systemd to alway start the recorder script  
 ```
 sudo systemctl daemon-reload
 sudo systemctl enable recorder.service
@@ -138,14 +138,18 @@ add this line to end of file
 ```cronjob
 */5 * * * *     python /home/pi/eurorack-rotating-audio-recorder/rotating-audio-recorder.py filecleaner > /dev/null 2>&1
 ```
-in case you also have a very small SD card (2GB in my case with only a few MB left) consider to add an additional cronjob:  
-```
-0 * * * *     journalctl --vacuum-size=2M > /dev/null 2>&1
-```
-and consider to run this command once to get a little more free space  
+
+
+## optional file cleanup
+in case you also have a very small SD card (2GB in my case with only a few MB left) consider to run once:  
 ```
 sudo apt-get clean
 ```
+and avoid to get huge logs by limiting log size with `SystemMaxUse=8M` in:  
+```
+sudo nano /etc/systemd/journald.conf
+```
+
 
 ## finally restart your raspberry pi zero
 ```
