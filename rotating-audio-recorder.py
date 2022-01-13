@@ -10,6 +10,7 @@ from scripts.UsbWatcher import UsbWatcher
 from scripts.Recorder import Recorder
 from scripts.FileCleaner import FileCleaner
 from scripts.RgbLeds import RgbLeds
+from scripts.FreezeWatcher import FreezeWatcher
 
 def main():
     try:
@@ -18,6 +19,8 @@ def main():
         def turnOffTheLightsAndExit(*args):
             leds = RgbLeds(recConf)
             leds.allLedsOff()
+            freezeWatcher = FreezeWatcher(recConf)
+            freezeWatcher.exit()
             sys.exit()
 
         signal.signal(signal.SIGINT, turnOffTheLightsAndExit)
@@ -32,6 +35,9 @@ def main():
         if recConf.action == 'filecleaner':
             fileCleaner = FileCleaner(recConf)
             fileCleaner.run()
+        if recConf.action == 'checkfreeze':
+            freezeWatcher = FreezeWatcher(recConf)
+            freezeWatcher.checkDaemonRestart()
 
     except KeyboardInterrupt:
         print('\nexit recorder')

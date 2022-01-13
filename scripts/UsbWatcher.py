@@ -6,12 +6,14 @@ from subprocess import Popen, PIPE
 import sys
 from .Helpers import *
 from .RgbLeds import RgbLeds
+from .FreezeWatcher import FreezeWatcher
 
 class UsbWatcher():
     def __init__(self, recConf):
         self.recConf = recConf
         self.leds = None
         self.reinitLeds()
+        self.freezewatcher = FreezeWatcher(recConf)
 
     ''' subprocess also uses leds. this solves issues with freezing on led.write()'''
     def reinitLeds(self):
@@ -20,12 +22,14 @@ class UsbWatcher():
 
     def observeUsbMount(self):
         print("observing usb mount")
+        self.reinitLeds()
         self.leds.ledStatusObserveUsb()
         # initial check once
         if checkUsbDriveIsMounted(self.recConf.usbstick.mountpoint) == True:
             print("already mounted")
             return self.runRecorderScript()
         try:
+            self.freezewatcher.publishWatchUsbMount()
             # check permanently
             if waitUntilUsbDriveIsMounted(self.recConf.usbstick.mountpoint) == True:
                 print("fire mounted")
@@ -48,6 +52,7 @@ class UsbWatcher():
         try:
             unmountUsbStick(self.recConf.usbstick.mountpoint)
             print("unmounting USB stick. waiting for unplug...")
+            self.freezewatcher.publishWatchUsbMount()
             while True:
                 self.leds.ledStatusUnplugUsb(unmountRequestTimestamp)
 

@@ -12,12 +12,14 @@ from .Helpers import terminalVuMeter
 from .Helpers import appendToFileCleanerList
 from .RgbLeds import RgbLeds
 from .PushButton import PushButton
+from .FreezeWatcher import FreezeWatcher
 from .classes.UnmountRequest import UnmountRequest
 
 class Recorder():
     def __init__(self, recConf):
         self.recConf = recConf
         self.leds = RgbLeds(recConf)
+        self.freezewatcher = FreezeWatcher(recConf)
         self.q = queue.Queue()
         self.lastSilenceBegin = None
 
@@ -60,9 +62,7 @@ class Recorder():
         resource.__exit__()
 
     def clearAudioDataQue(self):
-        with self.q.mutex:
-            self.q.queue.clear()
-
+        with self.q.mutex:self.freezewatcher.heartbeat()
     def clearData(self, resource, file1=None, file2=None):
         self.destroyInputStream(resource)
         self.clearAudioDataQue()
@@ -89,7 +89,7 @@ class Recorder():
     def observeAudioInputWithoutRecording(self):
         print('observing audio level without recording...\n')
         self.leds.ledStatusObserveAudio()
-
+        self.freezewatcher.publishWatchAudio()
         with self.getInputStream(2) as inputStream:
             STEREO = 0
             DUAL_MONO = 1
@@ -97,6 +97,7 @@ class Recorder():
             RECMODE = STEREO
             lastCheckUnplugged = 0
             while True:
+                self.freezewatcher.heartbeat()
                 audioData = self.q.get()
                 if self.unmountButton.checkFirePushEvent() == True:
                     self.clearData(inputStream)
@@ -159,10 +160,12 @@ class Recorder():
         lastRecordingBegin = time.time()
         self.lastSilenceBegin = None
         print(f"start recording STEREO ${filename}\n")
+        self.freezewatcher.publishWatchAudio()
         try:
             with self.getSoundFile(filename, self.recConf.rec.channels) as file:
                 with self.getInputStream(2) as inputStream:
                     while True:
+                        self.freezewatcher.heartbeat()
                         audioDataStereo = self.q.get()
                         file.write(audioDataStereo)
                         self.leds.ledStatusRecordAudio(lastRecordingBegin)
@@ -189,11 +192,13 @@ class Recorder():
         filenameCH2 = self.recConf.getRecFileName('ch2')
         lastRecordingBegin = time.time()
         print(f"start recording DUAL MONO\n{filenameCH1}\n{filenameCH2}\n")
+        self.freezewatcher.publishWatchAudio()
         try:
             with self.getSoundFile(filenameCH1, 1) as fileCH1:
                 with self.getSoundFile(filenameCH2, 1) as fileCH2:
                     with self.getInputStream(2) as inputStream:
                         while True:
+                            self.freezewatcher.heartbeat()
                             audioDataStereo = self.q.get()
                             self.leds.ledStatusRecordAudio(lastRecordingBegin)
                             averageVolume = self.vuMeterDualChannel(audioDataStereo)
@@ -225,10 +230,12 @@ class Recorder():
         lastRecordingBegin = time.time()
         self.leds.ledVuDualChannel(0, 0)
         print(f"start recording MONO ${filename}\n")
+        self.freezewatcher.publishWatchAudio()
         try:
             with self.getSoundFile(filename, 1) as file:
                 with self.getInputStream(1) as inputStream:
                     while True:
+                        self.freezewatcher.heartbeat()
                         audioData = self.q.get()
                         file.write(audioData)
                         self.leds.ledStatusRecordAudio(lastRecordingBegin)

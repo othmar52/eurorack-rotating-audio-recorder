@@ -38,11 +38,18 @@ class FileCleanerProps():
         self.logfilename = None
         self.cronjobIntervalMinutes = None
 
+class FreezeWatcherProps():
+    def __init__(self):
+        self.enable = None
+        self.cronjobIntervalMinutes = None
+        self.pidFile = None
+
 class RecorderConf():
     def __init__(self, action):
         self.rec = recProps()
         self.usbstick = usbstickProps()
         self.filecleaner = FileCleanerProps()
+        self.freezewatcher = FreezeWatcherProps()
         self.cnf = None
         self.action = action
         self.recMode = False
@@ -75,6 +82,11 @@ class RecorderConf():
         self.filecleaner.cronjobIntervalMinutes = int(self.cnf.get('filecleaner', 'cronjobIntervalMinutes'))
 
         self.terminalVuMeter = int(self.cnf.get('general', 'terminalvumeter'))
+
+        self.freezewatcher.enable = int(self.cnf.get('freezewatcher', 'enable'))
+        self.freezewatcher.cronjobIntervalMinutes = int(self.cnf.get('freezewatcher', 'cronjobIntervalMinutes'))
+        self.freezewatcher.pidFile = str(self.cnf.get('freezewatcher', 'pidFile'))
+
 
     def getRecFileName(self, channelString):
         return f"{self.usbstick.mountpoint}/delme_rec_%s-%s.wav" % (time.strftime("%Y.%m.%d-%H.%M.%S"), channelString)

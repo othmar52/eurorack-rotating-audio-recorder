@@ -30,7 +30,7 @@ def getRecorderConf():
         nargs = 1,
         type=str,
         help='what to do. use exactly one of the available actions',
-        choices=['usbwatcher', 'recorder', 'filecleaner']
+        choices=['usbwatcher', 'recorder', 'filecleaner', 'checkfreeze']
     )
     optional.add_argument(
         '--targetdir',

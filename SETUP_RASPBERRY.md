@@ -139,6 +139,12 @@ add this line to end of file
 */5 * * * *     python /home/pi/eurorack-rotating-audio-recorder/rotating-audio-recorder.py filecleaner > /dev/null 2>&1
 ```
 
+## optional workaround for freezing issues
+in case you experience freezing like #1 consider to add an additional cronjob as a workaround
+```cronjob
+*/5 * * * *     python /home/pi/eurorack-rotating-audio-recorder/rotating-audio-recorder.py checkfreeze > /dev/null 2>&1
+```
+this restarts the recorder service in case a hanging recorder instance is detected
 
 ## optional file cleanup
 in case you also have a very small SD card (2GB in my case with only a few MB left) consider to run once:  

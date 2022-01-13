@@ -70,10 +70,13 @@ def appendToFileCleanerList(fileCleanerFile, filenameToAdd):
 
 def appendLineToTextFile(fileNameToWrite, lineToAdd):
     ensureFileExists(fileNameToWrite)
-    file = open(fileNameToWrite, 'a')
+    file = open(fileNameToWrite, 'w')
     file.write(f'{lineToAdd}\n')
     file.close()
 
+def writeTextFile(fileNameToWrite, fileContent):
+    with open(fileNameToWrite, "w") as myfile:
+        myfile.write(fileContent)
 
 def removeLinesFromBeginningInTextFile(filePathToModify, amountOfLinesToRemove):
     if amountOfLinesToRemove < 1:
@@ -97,3 +100,10 @@ def getFileContent(pathAndFileName):
 def ensureFileExists(filePath):
     if not os.path.exists(filePath):
         open(filePath, 'a').close()
+
+def touch(filePath, times=None):
+    with open(filePath, 'a'):
+        os.utime(filePath, times)
+
+def restartRecorderDaemon():
+    subprocess.run(["systemctl", "restart", "recorder"])
