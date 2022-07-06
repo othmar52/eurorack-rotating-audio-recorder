@@ -56,6 +56,7 @@ Having silence on the audio input for e.g. 10 seconds the recordings stops atoma
 
 
 
+see my other [eurorack DIY projects](https://github.com/othmar52/eurorack)  
 
 
 
